@@ -1,4 +1,6 @@
 import {Component} from 'react'
+import Cookies from 'js-cookie'
+import {Redirect} from 'react-router-dom'
 
 import './index.css'
 
@@ -12,6 +14,18 @@ class LoginForm extends Component {
 
   onGetPassword = event => this.setState({password: event.target.value})
 
+  onSubmitSuccess = jwtToken => {
+    const {history} = this.props
+
+    Cookies.set('jwt_token', jwtToken, {expires: 30, path: '/'})
+
+    history.push('/')
+  }
+
+  onSubmitFailure = errorMsg => {
+    this.setState({showSubmitError: true, errorMsg})
+  }
+
   onSubmitLoginForm = async event => {
     event.preventDefault()
     const {username, password} = this.state
@@ -23,11 +37,19 @@ class LoginForm extends Component {
     }
     const response = await fetch(loginApiUrl, options)
     const data = await response.json()
-    console.log(response)
+    if (response.ok === true) {
+      this.onSubmitSuccess(data.jwt_token)
+    } else {
+      this.onSubmitFailure(data.error_msg)
+    }
   }
 
   render() {
     const {username, password, showSubmitError, errorMsg} = this.state
+    const jwtToken = Cookies.get('jwt_token')
+    if (jwtToken !== undefined) {
+      return <Redirect to="/" />
+    }
     return (
       <div className="login-container">
         <form
