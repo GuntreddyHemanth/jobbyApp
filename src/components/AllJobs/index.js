@@ -1,6 +1,7 @@
 import {Component} from 'react'
 import Loader from 'react-loader-spinner'
 import Cookies from 'js-cookie'
+import {AiOutlineSearch} from 'react-icons/ai'
 import Header from '../Header'
 
 import './index.css'
@@ -50,15 +51,60 @@ const apiStatusConstants = {
   inProgress: 'IN_PROGRESS',
 }
 
+const apiJobsStatusConstants = {
+  initial: 'INITIAL',
+  success: 'Success',
+  failure: 'FAILURE',
+  inprogress: 'IN_PROGRESS',
+}
+
 class AllJobs extends Component {
   state = {
     profileData: [],
     apiStatus: apiStatusConstants.initial,
     responseSuccess: false,
+    searchInput: '',
+    apiJobsStatus: apiJobsStatusConstants.initial,
+    checkboxInputs: [],
   }
 
   componentDidMount = () => {
     this.onGetProfileDetails()
+  }
+
+  onGetInputOption = event => {
+    const {checkboxInputs} = this.state
+    const inputNotInList = checkboxInputs.filter(
+      eachItem => eachItem === event.target.id,
+    )
+    if (inputNotInList.length === 0) {
+      this.setState(
+        prevState => ({
+          checkboxInputs: [...prevState.checkboxInputs, event.target.id],
+        }),
+        this.onGetJobDetails,
+      )
+    } else {
+      const filteredData = checkboxInputs.filter(
+        eachItem => eachItem !== event.target.id,
+      )
+      this.setState({checkboxInputs: filteredData}), this.onGetJobDetails)
+    }
+  }
+
+  onRenderJobsStatus = () => {
+    const {apiJobsStatus} = this.state
+
+    switch (apiJobsStatus) {
+      case apiJobsStatusConstants.success:
+        return this.onGetJobsView()
+      case apiJobsStatusConstants.failure:
+        return this.onGetJobsFailureView()
+      case apiJobsStatusConstants.inProgress:
+        return this.renderLoadingView()
+      default:
+        return null
+    }
   }
 
   onGetCheckBoxesView = () => (
@@ -72,6 +118,25 @@ class AllJobs extends Component {
             onChange={this.onGetInputOption}
           />
           <label className="label" htmlFor={eachItem.employmentTypeId}>
+            {eachItem.label}
+          </label>
+        </li>
+      ))}
+    </ul>
+  )
+
+  onGetRadioButtonsView = () => (
+    <ul className="check-button-container">
+      {salaryRangesList.map(eachItem => (
+        <li className="li-container" key={eachItem.salaryRangeId}>
+          <input
+            className="radio"
+            id={eachItem.salaryRangeId}
+            type="radio"
+            name="option"
+            onChange={this.onGetRadioOption}
+          />
+          <label className="label" htmlFor={eachItem.salaryRangeId}>
             {eachItem.label}
           </label>
         </li>
@@ -161,7 +226,22 @@ class AllJobs extends Component {
     }
   }
 
+  onGetSearchInput = event => {
+    this.setState({searchInput: event.target.value})
+  }
+
+  onSubmitSearchInput = () => {
+    this.onGetJobDetails()
+  }
+
+  onEnterSearchInput = event => {
+    if (event.key === 'Enter') {
+      this.onGetJobDetails()
+    }
+  }
+
   render() {
+    const {searchInput} = this.state
     return (
       <>
         <Header />
@@ -171,6 +251,31 @@ class AllJobs extends Component {
             <hr className="hr-line" />
             <h1 className="text">Type of Employment</h1>
             {this.onGetCheckBoxesView()}
+            <hr className="hr-line" />
+            <h1 className="text">Salary Range</h1>
+            {this.onGetRadioButtonsView()}
+          </div>
+          <div className="jobs-container">
+            <div>
+              <input
+                className="search-input"
+                type="search"
+                value={searchInput}
+                placeholder="Search"
+                onChange={this.onGetSearchInput}
+                onKeyDown={this.onEnterSearchInput}
+              />
+              <button
+                data-testid="searchButton"
+                type="button"
+                className="search-button"
+                onClick={this.onSubmitSearchInput}
+                aria-label="Search"
+              >
+                <AiOutlineSearch className="search-icon" />
+              </button>
+            </div>
+            {this.onRenderJobsStatus()}
           </div>
         </div>
       </>
