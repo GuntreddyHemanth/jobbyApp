@@ -5,6 +5,44 @@ import Header from '../Header'
 
 import './index.css'
 
+const employmentTypesList = [
+  {
+    label: 'Full Time',
+    employmentTypeId: 'FULLTIME',
+  },
+  {
+    label: 'Part Time',
+    employmentTypeId: 'PARTTIME',
+  },
+  {
+    label: 'Freelance',
+    employmentTypeId: 'FREELANCE',
+  },
+  {
+    label: 'Internship',
+    employmentTypeId: 'INTERNSHIP',
+  },
+]
+
+const salaryRangesList = [
+  {
+    salaryRangeId: '1000000',
+    label: '10 LPA and above',
+  },
+  {
+    salaryRangeId: '2000000',
+    label: '20 LPA and above',
+  },
+  {
+    salaryRangeId: '3000000',
+    label: '30 LPA and above',
+  },
+  {
+    salaryRangeId: '4000000',
+    label: '40 LPA and above',
+  },
+]
+
 const apiStatusConstants = {
   initial: 'INITIAL',
   success: 'SUCCESS',
@@ -19,6 +57,28 @@ class AllJobs extends Component {
     responseSuccess: false,
   }
 
+  componentDidMount = () => {
+    this.onGetProfileDetails()
+  }
+
+  onGetCheckBoxesView = () => (
+    <ul className="check-boxes-container">
+      {employmentTypesList.map(eachItem => (
+        <li className="li-container" key={eachItem.employmentTypeId}>
+          <input
+            className="input"
+            id={eachItem.employmentTypeId}
+            type="checkbox"
+            onChange={this.onGetInputOption}
+          />
+          <label className="label" htmlFor={eachItem.employmentTypeId}>
+            {eachItem.label}
+          </label>
+        </li>
+      ))}
+    </ul>
+  )
+
   onGetProfileDetails = async () => {
     this.setState({apiStatus: apiStatusConstants.inProgress})
     const jwtToken = Cookies.get('jwt_token')
@@ -29,10 +89,24 @@ class AllJobs extends Component {
       },
       method: 'GET',
     }
-    console.log('About to make fetch request')
     const responseProfile = await fetch(profileApiUrl, optionsProfile)
-    console.log('Fetch request made')
-    console.log(responseProfile)
+
+    if (responseProfile.ok === true) {
+      const fetchedDataProfile = [await responseProfile.json()]
+      console.log(fetchedDataProfile)
+      const updatedDataProfile = fetchedDataProfile.map(eachItem => ({
+        name: eachItem.profile_details.name,
+        profileImageUrl: eachItem.profile_details.profile_image_url,
+        shortBio: eachItem.profile_details.short_bio,
+      }))
+      this.setState({
+        profileData: updatedDataProfile,
+        responseSuccess: true,
+        apiStatus: apiStatusConstants.success,
+      })
+    } else {
+      this.setState({apiStatus: apiStatusConstants.failure})
+    }
   }
 
   onGetProfileView = () => {
@@ -94,6 +168,9 @@ class AllJobs extends Component {
         <div className="all-jobs-container">
           <div className="side-bar-container">
             {this.onRenderProfileStatus()}
+            <hr className="hr-line" />
+            <h1 className="text">Type of Employment</h1>
+            {this.onGetCheckBoxesView()}
           </div>
         </div>
       </>
