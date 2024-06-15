@@ -58,3 +58,13 @@
   color: #ff0b37;
   font-family: 'Roboto';
 }
+
+@media screen and (max-width: 767px) {
+  .login-container {
+    padding: 15px;
+  }
+
+  .login-form-container {
+    width: 100%;
+  }
+}
