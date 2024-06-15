@@ -3,6 +3,7 @@ import Loader from 'react-loader-spinner'
 import Cookies from 'js-cookie'
 import {AiOutlineSearch} from 'react-icons/ai'
 import Header from '../Header'
+import JobItem from '../JobItem'
 
 import './index.css'
 
@@ -58,6 +59,9 @@ const apiJobsStatusConstants = {
   inprogress: 'IN_PROGRESS',
 }
 
+const failureViewImg =
+  'https://assets.ccbp.in/frontend/react-js/failure-img.png'
+
 class AllJobs extends Component {
   state = {
     profileData: [],
@@ -66,10 +70,50 @@ class AllJobs extends Component {
     searchInput: '',
     apiJobsStatus: apiJobsStatusConstants.initial,
     checkboxInputs: [],
+    radioInput: '',
+    jobsData: [],
   }
 
   componentDidMount = () => {
     this.onGetProfileDetails()
+    this.onGetJobDetails()
+  }
+
+  onGetJobDetails = async () => {
+    this.setState({apiJobsStatus: apiJobsStatusConstants.inprogress})
+    const jwtToken = Cookies.get('jwt_token')
+    const {checkboxInputs, radioInput, searchInput} = this.state
+    const jobsApiUrl = `https://apis.ccbp.in/jobs?employment_type=${checkboxInputs}&minimum_package=${radioInput}&search=${searchInput}`
+    const optionsJobs = {
+      headers: {
+        Authorization: `Bearer ${jwtToken}`,
+      },
+      method: 'GET',
+    }
+    const responseJobs = await fetch(jobsApiUrl, optionsJobs)
+    if (responseJobs.ok === true) {
+      const fetchedDataJobs = await responseJobs.json()
+      const updatedDataJobs = fetchedDataJobs.jobs.map(eachItem => ({
+        companyLogoUrl: eachItem.company_logo_url,
+        employmentType: eachItem.employment_type,
+        id: eachItem.id,
+        jobDescription: eachItem.job_description,
+        location: eachItem.location,
+        packagePerAnnum: eachItem.package_per_annum,
+        rating: eachItem.rating,
+        title: eachItem.title,
+      }))
+      this.setState({
+        jobsData: updatedDataJobs,
+        apiJobsStatus: apiJobsStatusConstants.success,
+      })
+    } else {
+      this.setState({apiJobsStatus: apiJobsStatusConstants.failure})
+    }
+  }
+
+  onGetRadioOption = event => {
+    this.setState({radioInput: event.target.id}, this.onGetJobDetails)
   }
 
   onGetInputOption = event => {
@@ -88,8 +132,53 @@ class AllJobs extends Component {
       const filteredData = checkboxInputs.filter(
         eachItem => eachItem !== event.target.id,
       )
-      this.setState({checkboxInputs: filteredData}), this.onGetJobDetails)
+      this.setState({checkboxInputs: filteredData}, this.onGetJobDetails)
     }
+  }
+
+  onRetryJobs = () => {
+    this.onGetJobDetails()
+  }
+
+  onGetJobsFailureView = () => (
+    <div className="failure-img-button-container">
+      <img className="failure-img" src={failureViewImg} alt="failure view" />
+      <h1 className="failure-heading">Oops! Something Went Wrong</h1>
+      <p className="failure-paragraph">
+        we cannot seem to find the page you are looking for
+      </p>
+      <div className="jobs-failure-button-container">
+        <button
+          className="failure-button"
+          type="button"
+          onClick={this.onRetryJobs}
+        >
+          retry
+        </button>
+      </div>
+    </div>
+  )
+
+  onGetJobsView = () => {
+    const {jobsData} = this.state
+    const noJobs = jobsData.length === 0
+    return noJobs ? (
+      <div className="no-jobs-container">
+        <img
+          className="no-jobs-img"
+          src="https://assets.ccbp.in/frontend/react-js/no-jobs-img.png"
+          alt="no jobs"
+        />
+        <h1>No jobs found</h1>
+        <p>we could not find any jobs. Try other filters.</p>
+      </div>
+    ) : (
+      <ul className="ul-job-item-container">
+        {jobsData.map(eachItem => (
+          <JobItem key={eachItem.id} jobData={eachItem} />
+        ))}
+      </ul>
+    )
   }
 
   onRenderJobsStatus = () => {
