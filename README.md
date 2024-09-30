@@ -1,4 +1,10 @@
-In this project, let's build a **Jobby App** by applying the concepts we have learned till now.
+let's build a **Jobby App** 
+
+JobApp is a platform that helps users search for jobs quickly and easily.
+
+Log in with your credentials: 
+**Username: rahul** 
+**Password: rahul@2021**
 
 ### Refer to videos below:
 
